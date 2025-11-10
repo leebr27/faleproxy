@@ -2,79 +2,12 @@ const request = require('supertest');
 const cheerio = require('cheerio');
 const { sampleHtmlWithYale } = require('./test-utils');
 const nock = require('nock');
-const express = require('express');
-const axios = require('axios');
-const path = require('path');
-
-// Create a test app instance
-function createTestApp() {
-  const app = express();
-  
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
-  app.use(express.static(path.join(__dirname, '..', 'public')));
-
-  app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
-  });
-
-  app.post('/fetch', async (req, res) => {
-    try {
-      const { url } = req.body;
-      
-      if (!url) {
-        return res.status(400).json({ error: 'URL is required' });
-      }
-
-      const response = await axios.get(url);
-      const html = response.data;
-
-      const $ = cheerio.load(html);
-      
-      // Process text nodes in the body
-      $('body *').contents().filter(function() {
-        return this.nodeType === 3;
-      }).each(function() {
-        const text = $(this).text();
-        const newText = text
-          .replace(/YALE/g, 'FALE')
-          .replace(/Yale/g, 'Fale')
-          .replace(/yale/g, 'fale');
-        if (text !== newText) {
-          $(this).replaceWith(newText);
-        }
-      });
-      
-      const title = $('title').text()
-        .replace(/YALE/g, 'FALE')
-        .replace(/Yale/g, 'Fale')
-        .replace(/yale/g, 'fale');
-      $('title').text(title);
-      
-      return res.json({ 
-        success: true, 
-        content: $.html(),
-        title: title,
-        originalUrl: url
-      });
-    } catch (error) {
-      console.error('Error fetching URL:', error.message);
-      return res.status(500).json({ 
-        error: `Failed to fetch content: ${error.message}` 
-      });
-    }
-  });
-  
-  return app;
-}
+const app = require('../app');
 
 describe('Integration Tests', () => {
-  let app;
-
   beforeAll(() => {
     nock.disableNetConnect();
     nock.enableNetConnect('127.0.0.1');
-    app = createTestApp();
   });
 
   afterAll(() => {
