@@ -53,14 +53,21 @@ app.post('/fetch', async (req, res) => {
     }).each(function() {
       // Replace text content but not in URLs or attributes
       const text = $(this).text();
-      const newText = text.replace(/Yale/g, 'Fale').replace(/yale/g, 'fale').replace(/YALE/g, 'FALE');
+      // Replace with case preservation: YALE -> FALE, Yale -> Fale, yale -> fale
+      const newText = text
+        .replace(/YALE/g, 'FALE')
+        .replace(/Yale/g, 'Fale')
+        .replace(/yale/g, 'fale');
       if (text !== newText) {
         $(this).replaceWith(newText);
       }
     });
     
     // Process title separately
-    const title = $('title').text().replace(/Yale/g, 'Fale').replace(/yale/g, 'fale').replace(/YALE/g, 'FALE');
+    const title = $('title').text()
+      .replace(/YALE/g, 'FALE')
+      .replace(/Yale/g, 'Fale')
+      .replace(/yale/g, 'fale');
     $('title').text(title);
     
     return res.json({ 
@@ -78,6 +85,8 @@ app.post('/fetch', async (req, res) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Faleproxy server running at http://localhost:${PORT}`);
 });
+
+module.exports = { app, server };
